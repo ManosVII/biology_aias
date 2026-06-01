@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Βιολογία - Παιχνίδι Αξιολόγησης</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 780px;
+    padding: 16px;
+  }
+
+  /* ====== SCREENS ====== */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ====== CARD ====== */
+  .card {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 36px 40px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  /* ====== WELCOME ====== */
+  #welcome-screen .logo {
+    font-size: 72px;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  #welcome-screen h1 {
+    text-align: center;
+    font-size: 2rem;
+    color: #f9ca24;
+    margin-bottom: 6px;
+  }
+  #welcome-screen .subtitle {
+    text-align: center;
+    color: #a0aec0;
+    margin-bottom: 28px;
+    font-size: 1rem;
+  }
+  .chapters-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .chapter-tag {
+    background: rgba(249,202,36,0.12);
+    border: 1px solid rgba(249,202,36,0.3);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: #f9ca24;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .info-row {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 28px;
+    font-size: 0.9rem;
+    color: #a0aec0;
+  }
+  .info-row span { display: flex; align-items: center; gap: 6px; }
+
+  /* ====== BUTTONS ====== */
+  .btn {
+    display: inline-block;
+    padding: 14px 36px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: linear-gradient(90deg, #f9ca24, #f0932b);
+    color: #1a1a2e;
+    width: 100%;
+    font-size: 1.1rem;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(249,202,36,0.4); }
+  .btn-sm {
+    padding: 8px 20px;
+    font-size: 0.85rem;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .btn-sm:hover { background: rgba(255,255,255,0.2); }
+  .btn-next {
+    background: linear-gradient(90deg, #6c5ce7, #a29bfe);
+    color: #fff;
+    margin-top: 18px;
+    width: 100%;
+  }
+  .btn-next:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(108,92,231,0.4); }
+
+  /* ====== GAME HEADER ====== */
+  #game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    padding: 12px 20px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .score-display { font-size: 1.1rem; font-weight: 700; color: #f9ca24; }
+  .score-display span { color: #fff; font-weight: 400; font-size: 0.85rem; }
+  .progress-info { font-size: 0.85rem; color: #a0aec0; text-align: center; }
+  .timer-display {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #55efc4;
+    min-width: 48px;
+    text-align: right;
+  }
+  .timer-display.warning { color: #fd79a8; animation: pulse 0.5s infinite alternate; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
+
+  /* Progress bar */
+  .progress-bar-wrap {
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    height: 8px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f9ca24, #f0932b);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+  }
+
+  /* ====== QUESTION ====== */
+  .question-type-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .badge-mc   { background: rgba(108,92,231,0.3); color: #a29bfe; border: 1px solid #a29bfe; }
+  .badge-tf   { background: rgba(0,184,148,0.3);  color: #55efc4; border: 1px solid #55efc4; }
+  .badge-order{ background: rgba(253,121,168,0.3); color: #fd79a8; border: 1px solid #fd79a8; }
+  .badge-match{ background: rgba(249,202,36,0.3);  color: #f9ca24; border: 1px solid #f9ca24; }
+  .badge-fill { background: rgba(116,185,255,0.3); color: #74b9ff; border: 1px solid #74b9ff; }
+
+  .question-text {
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.5;
+    margin-bottom: 22px;
+    color: #fff;
+  }
+  .chapter-label {
+    font-size: 0.78rem;
+    color: #636e72;
+    margin-bottom: 6px;
+  }
+
+  /* ====== MC OPTIONS ====== */
+  .options-grid { display: flex; flex-direction: column; gap: 10px; }
+  .option-btn {
+    background: rgba(255,255,255,0.06);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: #fff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .option-btn:not(.answered):hover {
+    background: rgba(108,92,231,0.2);
+    border-color: #a29bfe;
+    transform: translateX(4px);
+  }
+  .option-letter {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  .option-btn.correct { background: rgba(0,184,148,0.25); border-color: #00b894; }
+  .option-btn.correct .option-letter { background: #00b894; }
+  .option-btn.wrong   { background: rgba(214,48,49,0.25);  border-color: #d63031; }
+  .option-btn.wrong .option-letter   { background: #d63031; }
+
+  /* ====== TRUE/FALSE ====== */
+  .tf-row { display: flex; gap: 14px; }
+  .tf-btn {
+    flex: 1;
+    padding: 22px;
+    border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .tf-btn:not(.answered):hover { transform: scale(1.04); }
+  .tf-btn.correct { background: rgba(0,184,148,0.3); border-color: #00b894; }
+  .tf-btn.wrong   { background: rgba(214,48,49,0.3);  border-color: #d63031; }
+
+  /* ====== ORDER ====== */
+  .order-instruction { font-size: 0.82rem; color: #a0aec0; margin-bottom: 12px; }
+  .order-items { display: flex; flex-direction: column; gap: 8px; }
+  .order-item {
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 12px 16px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .order-item:hover { border-color: #fd79a8; background: rgba(253,121,168,0.1); }
+  .order-item.dragging { opacity: 0.4; }
+  .order-item.drag-over { border-color: #f9ca24; background: rgba(249,202,36,0.15); }
+  .drag-handle { color: #636e72; font-size: 1.1rem; }
+  .order-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(253,121,168,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .order-submit {
+    margin-top: 14px;
+    background: linear-gradient(90deg, #fd79a8, #e84393);
+    color: #fff;
+    width: 100%;
+  }
+  .order-submit:hover { transform: translateY(-2px); }
+  .order-item.order-correct { border-color: #00b894; background: rgba(0,184,148,0.15); }
+  .order-item.order-wrong   { border-color: #d63031; background: rgba(214,48,49,0.15); }
+
+  /* ====== MATCH ====== */
+  .match-instruction { font-size: 0.82rem; color: #a0aec0; margin-bottom: 14px; }
+  .match-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .match-col-label { font-size: 0.78rem; color: #f9ca24; font-weight: 700; margin-bottom: 6px; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+  .match-items { display: flex; flex-direction: column; gap: 8px; }
+  .match-item {
+    background: rgba(255,255,255,0.07);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    text-align: center;
+    transition: all 0.15s;
+    min-height: 44px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .match-item.selected { border-color: #f9ca24; background: rgba(249,202,36,0.2); }
+  .match-item.matched  { border-color: #00b894; background: rgba(0,184,148,0.2); cursor: default; }
+  .match-item.wrong-match { border-color: #d63031; background: rgba(214,48,49,0.2); }
+  .match-item:not(.matched):not(.wrong-match):hover { border-color: rgba(255,255,255,0.4); }
+  .match-submit { margin-top: 14px; background: linear-gradient(90deg, #f9ca24, #f0932b); color: #1a1a2e; width: 100%; }
+
+  /* ====== FILL IN ====== */
+  .fill-input {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.07);
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+  .fill-input:focus { border-color: #74b9ff; }
+  .fill-input.correct { border-color: #00b894; background: rgba(0,184,148,0.1); }
+  .fill-input.wrong   { border-color: #d63031; background: rgba(214,48,49,0.1); }
+  .fill-hint { font-size: 0.8rem; color: #636e72; margin-bottom: 12px; }
+  .fill-submit { background: linear-gradient(90deg, #74b9ff, #0984e3); color: #fff; width: 100%; }
+
+  /* ====== FEEDBACK ====== */
+  .feedback-box {
+    margin-top: 14px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    display: none;
+  }
+  .feedback-box.correct-fb { background: rgba(0,184,148,0.15); border: 1px solid #00b894; color: #55efc4; }
+  .feedback-box.wrong-fb   { background: rgba(214,48,49,0.15);  border: 1px solid #d63031; color: #ff7675; }
+  .feedback-icon { font-size: 1.3rem; margin-right: 6px; }
+
+  /* ====== RESULTS ====== */
+  #results-screen .card { text-align: center; }
+  .result-emoji { font-size: 80px; margin-bottom: 10px; }
+  .result-grade {
+    font-size: 2.4rem;
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+  .result-msg { color: #a0aec0; margin-bottom: 24px; font-size: 1rem; }
+  .result-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-box {
+    background: rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .stat-num { font-size: 1.8rem; font-weight: 900; }
+  .stat-lbl { font-size: 0.75rem; color: #a0aec0; margin-top: 4px; }
+  .chapter-results { text-align: left; margin-bottom: 24px; }
+  .chapter-results h3 { font-size: 0.9rem; color: #f9ca24; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .chap-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px; font-size: 0.85rem;
+  }
+  .chap-bar-wrap { flex: 1; background: rgba(255,255,255,0.08); border-radius: 6px; height: 10px; overflow: hidden; }
+  .chap-bar-fill { height: 100%; border-radius: 6px; }
+  .chap-pct { min-width: 36px; text-align: right; font-weight: 700; }
+
+  /* ====== RESPONSIVE ====== */
+  @media (max-width: 500px) {
+    .card { padding: 22px 18px; }
+    .chapters-grid { grid-template-columns: 1fr; }
+    .result-stats { grid-template-columns: 1fr 1fr; }
+    .match-container { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- WELCOME -->
+  <div id="welcome-screen" class="screen active">
+    <div class="card">
+      <div class="logo">🧬</div>
+      <h1>Βιολογία Quiz</h1>
+      <p class="subtitle">Αξιολόγηση πριν τις εξετάσεις</p>
+      <div class="chapters-grid">
+        <div class="chapter-tag">🔬 §1.2 Κύτταρο</div>
+        <div class="chapter-tag">🏗️ §1.3 Οργάνωση</div>
+        <div class="chapter-tag">🌿 §2.1 Φωτοσύνθεση</div>
+        <div class="chapter-tag">🦠 §2.2 Πέψη (μονοκύτταρα)</div>
+        <div class="chapter-tag">🥗 Θρεπτικές ουσίες</div>
+        <div class="chapter-tag">❤️ Κυκλοφορικό</div>
+        <div class="chapter-tag">💨 Αναπνευστικό</div>
+        <div class="chapter-tag">🌱 Μεταφορά στα φυτά</div>
+      </div>
+      <div class="info-row">
+        <span>❓ 30 ερωτήσεις</span>
+        <span>⏱️ 30 δευτ./ερώτηση</span>
+        <span>🏆 Βαθμολογία 0-100</span>
+      </div>
+      <button class="btn btn-primary" onclick="startGame()">Ξεκινάμε! 🚀</button>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game-screen" class="screen">
+    <div id="game-header">
+      <div class="score-display">
+        <span>Σκορ</span><br>
+        <span id="score-val">0</span>
+      </div>
+      <div class="progress-info">
+        <div id="q-progress">Ερώτηση 1 / 30</div>
+        <div id="chapter-label" style="font-size:0.75rem;color:#636e72;margin-top:2px;"></div>
+      </div>
+      <div class="timer-display" id="timer-display">30</div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+    </div>
+    <div class="card" id="question-card">
+      <!-- dynamic content -->
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results-screen" class="screen">
+    <div class="card">
+      <div id="result-emoji" class="result-emoji">🏆</div>
+      <div id="result-grade" class="result-grade"></div>
+      <div id="result-msg" class="result-msg"></div>
+      <div class="result-stats">
+        <div class="stat-box">
+          <div id="stat-correct" class="stat-num" style="color:#00b894">0</div>
+          <div class="stat-lbl">Σωστές</div>
+        </div>
+        <div class="stat-box">
+          <div id="stat-wrong" class="stat-num" style="color:#d63031">0</div>
+          <div class="stat-lbl">Λάθος</div>
+        </div>
+        <div class="stat-box">
+          <div id="stat-pct" class="stat-num" style="color:#f9ca24">0%</div>
+          <div class="stat-lbl">Ποσοστό</div>
+        </div>
+      </div>
+      <div class="chapter-results">
+        <h3>Ανά κεφάλαιο</h3>
+        <div id="chapter-breakdown"></div>
+      </div>
+      <button class="btn btn-primary" onclick="restartGame()">Παίξε ξανά 🔄</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// =====================================================================
+//  QUESTION BANK
+// =====================================================================
+const ALL_QUESTIONS = [
+  // ---- ΚΥΤΤΑΡΟ ----
+  {
+    chapter: "Κύτταρο",
+    type: "mc",
+    question: "Τι είναι το κύτταρο;",
+    options: ["Το πιο μικρό μέρος ενός οργανισμού που είναι ζωντανό", "Ένα σύστημα οργάνων", "Ένα είδος ιστού", "Η καρδιά του οργανισμού"],
+    correct: 0,
+    explanation: "Το κύτταρο είναι το πιο μικρό μέρος ενός οργανισμού που είναι ζωντανό."
+  },
+  {
+    chapter: "Κύτταρο",
+    type: "mc",
+    question: "Ποια από τα παρακάτω έχουν ΜΟΝΟ τα φυτικά κύτταρα;",
+    options: ["Πυρήνα και μιτοχόνδρια", "Κυτταρικό τοίχωμα, χλωροπλάστες, χυμοτόπιο", "Πλασματική μεμβράνη και κυτταρόπλασμα", "Μόνο τον πυρήνα"],
+    correct: 1,
+    explanation: "Μόνο τα φυτικά κύτταρα έχουν κυτταρικό τοίχωμα, χλωροπλάστες και χυμοτόπιο."
+  },
+  {
+    chapter: "Κύτταρο",
+    type: "mc",
+    question: "Ποιο μέρος του κυττάρου δίνει ενέργεια;",
+    options: ["Πυρήνας", "Χυμοτόπιο", "Μιτοχόνδρια", "Κυτταρικό τοίχωμα"],
+    correct: 2,
+    explanation: "Τα μιτοχόνδρια δίνουν ενέργεια στο κύτταρο."
+  },
+  {
+    chapter: "Κύτταρο",
+    type: "tf",
+    question: "Τα φυτικά και ζωικά κύτταρα έχουν και τα δύο χλωροπλάστες.",
+    correct: false,
+    explanation: "Λάθος! Μόνο τα φυτικά κύτταρα έχουν χλωροπλάστες."
+  },
+  {
+    chapter: "Κύτταρο",
+    type: "mc",
+    question: "Τι κάνει ο πυρήνας του κυττάρου;",
+    options: ["Δίνει ενέργεια", "Αποθηκεύει νερό", "Κάνει φωτοσύνθεση", "Ελέγχει το κύτταρο"],
+    correct: 3,
+    explanation: "Ο πυρήνας ελέγχει το κύτταρο."
+  },
+  {
+    chapter: "Κύτταρο",
+    type: "tf",
+    question: "Η πλασματική μεμβράνη προστατεύει το κύτταρο.",
+    correct: true,
+    explanation: "Σωστό! Η πλασματική μεμβράνη προστατεύει το κύτταρο."
+  },
+  {
+    chapter: "Κύτταρο",
+    type: "mc",
+    question: "Τι αποθηκεύει το χυμοτόπιο;",
+    options: ["Ενέργεια", "Νερό", "Γλυκόζη", "Οξυγόνο"],
+    correct: 1,
+    explanation: "Το χυμοτόπιο αποθηκεύει νερό."
+  },
+
+  // ---- ΟΡΓΑΝΩΣΗ ----
+  {
+    chapter: "Οργάνωση οργανισμών",
+    type: "mc",
+    question: "Τι είναι ιστός;",
+    options: ["Ένα μόνο κύτταρο", "Ομάδα κυττάρων που κάνουν την ίδια δουλειά", "Ομάδα οργάνων", "Ολόκληρος ο οργανισμός"],
+    correct: 1,
+    explanation: "Ιστός = ομάδα κυττάρων που κάνουν την ίδια δουλειά."
+  },
+  {
+    chapter: "Οργάνωση οργανισμών",
+    type: "order",
+    question: "Βάλε στη σωστή σειρά (από μικρότερο σε μεγαλύτερο):",
+    items: ["Ιστός", "Κύτταρο", "Σύστημα οργάνων", "Οργανισμός", "Όργανο"],
+    correct: ["Κύτταρο", "Ιστός", "Όργανο", "Σύστημα οργάνων", "Οργανισμός"],
+    explanation: "Σωστή σειρά: Κύτταρο → Ιστός → Όργανο → Σύστημα οργάνων → Οργανισμός"
+  },
+  {
+    chapter: "Οργάνωση οργανισμών",
+    type: "tf",
+    question: "Ένα κύτταρο μπορεί να ζήσει μόνο του σε πολυκύτταρους οργανισμούς.",
+    correct: false,
+    explanation: "Λάθος! Στους πολυκύτταρους οργανισμούς τα κύτταρα ΔΕΝ μπορούν να ζήσουν μόνα τους. Μόνο στους μονοκύτταρους μπορούν."
+  },
+  {
+    chapter: "Οργάνωση οργανισμών",
+    type: "mc",
+    question: "Η καρδιά είναι παράδειγμα...",
+    options: ["Ιστού", "Κυττάρου", "Οργάνου", "Συστήματος οργάνων"],
+    correct: 2,
+    explanation: "Η καρδιά είναι παράδειγμα οργάνου (ομάδα ιστών που συνεργάζονται)."
+  },
+
+  // ---- ΦΩΤΟΣΥΝΘΕΣΗ ----
+  {
+    chapter: "Φωτοσύνθεση",
+    type: "mc",
+    question: "Ποια είναι τα υλικά που χρησιμοποιούν τα φυτά για τη φωτοσύνθεση;",
+    options: ["Οξυγόνο, νερό, ηλιακό φως", "Νερό, διοξείδιο του άνθρακα, φως ηλίου", "Γλυκόζη, νερό, ηλιακό φως", "Άλατα, οξυγόνο, φως"],
+    correct: 1,
+    explanation: "Τα φυτά χρησιμοποιούν νερό, CO₂ και φως ηλίου για τη φωτοσύνθεση."
+  },
+  {
+    chapter: "Φωτοσύνθεση",
+    type: "mc",
+    question: "Τι παράγεται κατά τη φωτοσύνθεση;",
+    options: ["Νερό και CO₂", "Γλυκόζη και οξυγόνο", "Αλάτι και γλυκόζη", "Μόνο οξυγόνο"],
+    correct: 1,
+    explanation: "Η φωτοσύνθεση παράγει γλυκόζη (τροφή) και οξυγόνο."
+  },
+  {
+    chapter: "Φωτοσύνθεση",
+    type: "tf",
+    question: "Η φωτοσύνθεση γίνεται στα μιτοχόνδρια.",
+    correct: false,
+    explanation: "Λάθος! Η φωτοσύνθεση γίνεται στους χλωροπλάστες, όχι στα μιτοχόνδρια."
+  },
+  {
+    chapter: "Φωτοσύνθεση",
+    type: "mc",
+    question: "Σε τι χρησιμεύει η γλυκόζη που παράγεται στη φωτοσύνθεση;",
+    options: ["Μόνο για να αναπνέει το φυτό", "Να μεγαλώνει, να φτιάχνει νέες ουσίες, να παίρνει ενέργεια", "Να φτιάχνει νερό", "Να απομακρύνει το CO₂"],
+    correct: 1,
+    explanation: "Η γλυκόζη βοηθά το φυτό να μεγαλώνει, να φτιάχνει νέες ουσίες και να παίρνει ενέργεια."
+  },
+
+  // ---- ΠΕΨΗ / ΜΟΝΟΚΥΤΤΑΡΑ ----
+  {
+    chapter: "Πέψη & Μεταφορά",
+    type: "mc",
+    question: "Πώς ανταλλάσσει ουσίες η αμοιβάδα;",
+    options: ["Με το κυκλοφορικό σύστημα", "Με διάχυση", "Με τους πνεύμονες", "Μέσω ριζών"],
+    correct: 1,
+    explanation: "Η αμοιβάδα ανταλλάσσει ουσίες με διάχυση (μονοκύτταρος οργανισμός)."
+  },
+  {
+    chapter: "Πέψη & Μεταφορά",
+    type: "mc",
+    question: "Ποιο μέρος του φυτού μεταφέρει νερό από τις ρίζες;",
+    options: ["Φλοίωμα", "Επιδερμίδα", "Ξύλωμα", "Στόματα"],
+    correct: 2,
+    explanation: "Το ξύλωμα μεταφέρει νερό από τις ρίζες προς τα πάνω."
+  },
+  {
+    chapter: "Πέψη & Μεταφορά",
+    type: "mc",
+    question: "Ποιο μέρος του φυτού μεταφέρει γλυκόζη;",
+    options: ["Ξύλωμα", "Φλοίωμα", "Ρίζες", "Χυμοτόπιο"],
+    correct: 1,
+    explanation: "Το φλοίωμα μεταφέρει τη γλυκόζη."
+  },
+  {
+    chapter: "Πέψη & Μεταφορά",
+    type: "tf",
+    question: "Το ξύλωμα και το φλοίωμα μαζί λέγονται αγωγός ιστός.",
+    correct: true,
+    explanation: "Σωστό! Ξύλωμα + Φλοίωμα = Αγωγός ιστός."
+  },
+
+  // ---- ΘΡΕΠΤΙΚΕΣ ΟΥΣΙΕΣ ----
+  {
+    chapter: "Θρεπτικές ουσίες",
+    type: "mc",
+    question: "Ποιες τροφές περιέχουν κυρίως υδατάνθρακες;",
+    options: ["Κρέας, αυγά, γάλα", "Ψωμί, μακαρόνια, ρύζι", "Τυρί, βούτυρο, κρέας", "Φρούτα, λαχανικά, ξηροί καρποί"],
+    correct: 1,
+    explanation: "Οι υδατάνθρακες βρίσκονται σε ψωμί, μακαρόνια και ρύζι — δίνουν ενέργεια."
+  },
+  {
+    chapter: "Θρεπτικές ουσίες",
+    type: "match",
+    question: "Ταίριαξε κάθε θρεπτική ουσία με τη λειτουργία της:",
+    pairs: [
+      { left: "Πρωτεΐνες", right: "Ανάπτυξη" },
+      { left: "Υδατάνθρακες", right: "Ενέργεια" },
+      { left: "Βιταμίνες", right: "Υγεία" },
+      { left: "Λίπη", right: "Αποθήκευση ενέργειας" }
+    ],
+    explanation: "Πρωτεΐνες→Ανάπτυξη, Υδατάνθρακες→Ενέργεια, Βιταμίνες→Υγεία, Λίπη→Αποθήκευση ενέργειας."
+  },
+  {
+    chapter: "Θρεπτικές ουσίες",
+    type: "order",
+    question: "Βάλε στη σωστή σειρά την πορεία της τροφής στο σώμα:",
+    items: ["Στομάχι", "Στόμα", "Λεπτό έντερο", "Οισοφάγος", "Φάρυγγας", "Παχύ έντερο"],
+    correct: ["Στόμα", "Φάρυγγας", "Οισοφάγος", "Στομάχι", "Λεπτό έντερο", "Παχύ έντερο"],
+    explanation: "Στόμα → Φάρυγγας → Οισοφάγος → Στομάχι → Λεπτό έντερο → Παχύ έντερο → Πρωκτός"
+  },
+  {
+    chapter: "Θρεπτικές ουσίες",
+    type: "tf",
+    question: "Η ποσότητα τροφής που χρειαζόμαστε εξαρτάται από την ηλικία, το φύλο και τη δραστηριότητά μας.",
+    correct: true,
+    explanation: "Σωστό! Η ποσότητα τροφής εξαρτάται από ηλικία, φύλο και δραστηριότητα."
+  },
+
+  // ---- ΚΥΚΛΟΦΟΡΙΚΟ ----
+  {
+    chapter: "Κυκλοφορικό σύστημα",
+    type: "mc",
+    question: "Τι κάνει η καρδιά;",
+    options: ["Φιλτράρει τον αέρα", "Σπρώχνει το αίμα", "Χωνεύει την τροφή", "Παράγει ενέργεια"],
+    correct: 1,
+    explanation: "Η καρδιά σπρώχνει το αίμα — λειτουργεί σαν αντλία."
+  },
+  {
+    chapter: "Κυκλοφορικό σύστημα",
+    type: "mc",
+    question: "Τι μεταφέρει το αίμα στον οργανισμό;",
+    options: ["Μόνο οξυγόνο", "Χρήσιμες ουσίες και οξυγόνο", "Μόνο θρεπτικές ουσίες", "Νερό και CO₂"],
+    correct: 1,
+    explanation: "Το αίμα μεταφέρει χρήσιμες ουσίες και οξυγόνο, και απομακρύνει άχρηστες ουσίες."
+  },
+  {
+    chapter: "Κυκλοφορικό σύστημα",
+    type: "tf",
+    question: "Τα σπονδυλωτά έχουν ανοιχτό κυκλοφορικό σύστημα.",
+    correct: false,
+    explanation: "Λάθος! Τα σπονδυλωτά έχουν ΚΛΕΙΣΤΟ κυκλοφορικό σύστημα. Ανοιχτό έχουν πολλά έντομα."
+  },
+  {
+    chapter: "Κυκλοφορικό σύστημα",
+    type: "mc",
+    question: "Ποια είναι τα βασικά όργανα του κυκλοφορικού συστήματος;",
+    options: ["Πνεύμονες και τραχεία", "Στομάχι και έντερο", "Καρδιά και αιμοφόρα αγγεία", "Νεφροί και ήπαρ"],
+    correct: 2,
+    explanation: "Τα βασικά όργανα του κυκλοφορικού είναι η καρδιά και τα αιμοφόρα αγγεία."
+  },
+
+  // ---- ΑΝΑΠΝΕΥΣΤΙΚΟ ----
+  {
+    chapter: "Αναπνευστικό σύστημα",
+    type: "mc",
+    question: "Γιατί αναπνέουν οι οργανισμοί;",
+    options: ["Για να αποβάλλουν νερό", "Για να κάνουν φωτοσύνθεση", "Για να παίρνουν ενέργεια", "Για να χωνεύουν την τροφή"],
+    correct: 2,
+    explanation: "Οι οργανισμοί αναπνέουν για να παίρνουν ενέργεια."
+  },
+  {
+    chapter: "Αναπνευστικό σύστημα",
+    type: "order",
+    question: "Βάλε στη σωστή σειρά την πορεία του αέρα:",
+    items: ["Τραχεία", "Μύτη", "Πνεύμονες", "Βρόγχοι", "Φάρυγγας", "Λάρυγγας"],
+    correct: ["Μύτη", "Φάρυγγας", "Λάρυγγας", "Τραχεία", "Βρόγχοι", "Πνεύμονες"],
+    explanation: "Μύτη → Φάρυγγας → Λάρυγγας → Τραχεία → Βρόγχοι → Πνεύμονες"
+  },
+  {
+    chapter: "Αναπνευστικό σύστημα",
+    type: "tf",
+    question: "Στους πνεύμονες γίνεται ανταλλαγή αερίων: το αίμα παίρνει οξυγόνο και αφήνει CO₂.",
+    correct: true,
+    explanation: "Σωστό! Στους πνεύμονες το αίμα παίρνει Ο₂ και αφήνει CO₂."
+  },
+  {
+    chapter: "Αναπνευστικό σύστημα",
+    type: "mc",
+    question: "Τι είναι η εισπνοή;",
+    options: ["Η έξοδος αέρα από τους πνεύμονες", "Η ανταλλαγή αερίων στους πνεύμονες", "Η είσοδος αέρα στους πνεύμονες", "Η παραγωγή CO₂"],
+    correct: 2,
+    explanation: "Εισπνοή = είσοδος αέρα στους πνεύμονες. Εκπνοή = έξοδος."
+  },
+  {
+    chapter: "Αναπνευστικό σύστημα",
+    type: "tf",
+    question: "Το κάπνισμα βοηθά την υγεία του αναπνευστικού συστήματος.",
+    correct: false,
+    explanation: "Λάθος! Το κάπνισμα καταστρέφει τους πνεύμονες και δυσκολεύει την αναπνοή."
+  }
+];
+
+// =====================================================================
+//  GAME STATE
+// =====================================================================
+let questions = [];
+let currentQ = 0;
+let score = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let timer = null;
+let timeLeft = 30;
+let answered = false;
+let chapterScores = {};   // { chapter: { correct, total } }
+let dragSrc = null;
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGame() {
+  questions = shuffleArray(ALL_QUESTIONS).slice(0, 30);
+  currentQ = 0; score = 0; correctCount = 0; wrongCount = 0;
+  chapterScores = {};
+  questions.forEach(q => {
+    if (!chapterScores[q.chapter]) chapterScores[q.chapter] = { correct: 0, total: 0 };
+    chapterScores[q.chapter].total++;
+  });
+  showScreen('game-screen');
+  renderQuestion();
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// =====================================================================
+//  RENDER QUESTION
+// =====================================================================
+function renderQuestion() {
+  answered = false;
+  clearInterval(timer);
+  timeLeft = 30;
+
+  const q = questions[currentQ];
+  const pct = (currentQ / questions.length) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('q-progress').textContent = `Ερώτηση ${currentQ + 1} / ${questions.length}`;
+  document.getElementById('chapter-label').textContent = q.chapter;
+  document.getElementById('score-val').textContent = score;
+
+  const timerEl = document.getElementById('timer-display');
+  timerEl.textContent = timeLeft;
+  timerEl.className = 'timer-display';
+
+  const card = document.getElementById('question-card');
+  let html = '';
+
+  const badgeMap = { mc: 'badge-mc', tf: 'badge-tf', order: 'badge-order', match: 'badge-match', fill: 'badge-fill' };
+  const labelMap = { mc: 'Πολλαπλή Επιλογή', tf: 'Σωστό / Λάθος', order: 'Σωστή Σειρά', match: 'Αντιστοίχιση', fill: 'Συμπλήρωσε' };
+
+  html += `<span class="question-type-badge ${badgeMap[q.type]}">${labelMap[q.type]}</span>`;
+  html += `<div class="question-text">${q.question}</div>`;
+
+  if (q.type === 'mc') html += renderMC(q);
+  else if (q.type === 'tf') html += renderTF(q);
+  else if (q.type === 'order') html += renderOrder(q);
+  else if (q.type === 'match') html += renderMatch(q);
+  else if (q.type === 'fill') html += renderFill(q);
+
+  html += `<div class="feedback-box" id="feedback-box"></div>`;
+
+  card.innerHTML = html;
+
+  if (q.type === 'order') initDragDrop();
+  if (q.type === 'match') initMatch(q);
+
+  startTimer();
+}
+
+// ---- MC ----
+function renderMC(q) {
+  const letters = ['Α', 'Β', 'Γ', 'Δ'];
+  let html = '<div class="options-grid">';
+  q.options.forEach((opt, i) => {
+    html += `<button class="option-btn" onclick="answerMC(${i})">
+      <span class="option-letter">${letters[i]}</span>${opt}
+    </button>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function answerMC(idx) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timer);
+  const q = questions[currentQ];
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.classList.add('answered'));
+  btns[q.correct].classList.add('correct');
+  if (idx !== q.correct) {
+    btns[idx].classList.add('wrong');
+    recordAnswer(false, q);
+  } else {
+    recordAnswer(true, q);
+  }
+  showFeedback(idx === q.correct, q.explanation);
+  showNext();
+}
+
+// ---- TF ----
+function renderTF(q) {
+  return `<div class="tf-row">
+    <button class="tf-btn" onclick="answerTF(true)">✅ Σωστό</button>
+    <button class="tf-btn" onclick="answerTF(false)">❌ Λάθος</button>
+  </div>`;
+}
+
+function answerTF(val) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timer);
+  const q = questions[currentQ];
+  const btns = document.querySelectorAll('.tf-btn');
+  btns.forEach(b => b.classList.add('answered'));
+  const isCorrect = (val === q.correct);
+  // highlight correct
+  btns[q.correct === true ? 0 : 1].classList.add('correct');
+  if (!isCorrect) btns[val === true ? 0 : 1].classList.add('wrong');
+  recordAnswer(isCorrect, q);
+  showFeedback(isCorrect, q.explanation);
+  showNext();
+}
+
+// ---- ORDER ----
+function renderOrder(q) {
+  const shuffled = shuffleArray(q.items);
+  let html = '<div class="order-instruction">Σύρε τα στοιχεία για να τα βάλεις στη σωστή σειρά:</div>';
+  html += '<div class="order-items" id="order-list">';
+  shuffled.forEach((item, i) => {
+    html += `<div class="order-item" draggable="true" data-value="${item}">
+      <span class="drag-handle">⣿</span>
+      <span class="order-num">${i + 1}</span>
+      <span>${item}</span>
+    </div>`;
+  });
+  html += '</div>';
+  html += `<button class="btn btn-sm order-submit" onclick="checkOrder()">Ελέγξτε απάντηση</button>`;
+  return html;
+}
+
+function initDragDrop() {
+  const list = document.getElementById('order-list');
+  if (!list) return;
+  list.addEventListener('dragstart', e => {
+    dragSrc = e.target.closest('.order-item');
+    dragSrc.classList.add('dragging');
+  });
+  list.addEventListener('dragend', e => {
+    document.querySelectorAll('.order-item').forEach(el => el.classList.remove('dragging', 'drag-over'));
+  });
+  list.addEventListener('dragover', e => {
+    e.preventDefault();
+    const target = e.target.closest('.order-item');
+    if (target && target !== dragSrc) {
+      document.querySelectorAll('.order-item').forEach(el => el.classList.remove('drag-over'));
+      target.classList.add('drag-over');
+    }
+  });
+  list.addEventListener('drop', e => {
+    e.preventDefault();
+    const target = e.target.closest('.order-item');
+    if (target && target !== dragSrc) {
+      const items = [...list.querySelectorAll('.order-item')];
+      const srcIdx = items.indexOf(dragSrc);
+      const tgtIdx = items.indexOf(target);
+      if (srcIdx < tgtIdx) list.insertBefore(dragSrc, target.nextSibling);
+      else list.insertBefore(dragSrc, target);
+      // update numbers
+      [...list.querySelectorAll('.order-item')].forEach((el, i) => {
+        el.querySelector('.order-num').textContent = i + 1;
+      });
+      target.classList.remove('drag-over');
+    }
+  });
+}
+
+function checkOrder() {
+  if (answered) return;
+  answered = true;
+  clearInterval(timer);
+  const q = questions[currentQ];
+  const items = [...document.querySelectorAll('.order-item')];
+  const userOrder = items.map(el => el.dataset.value);
+  const isCorrect = JSON.stringify(userOrder) === JSON.stringify(q.correct);
+  items.forEach((el, i) => {
+    if (userOrder[i] === q.correct[i]) el.classList.add('order-correct');
+    else el.classList.add('order-wrong');
+  });
+  document.querySelector('.order-submit').disabled = true;
+  recordAnswer(isCorrect, q);
+  showFeedback(isCorrect, q.explanation);
+  showNext();
+}
+
+// ---- MATCH ----
+let matchState = {};
+function renderMatch(q) {
+  const rights = shuffleArray(q.pairs.map(p => p.right));
+  let html = '<div class="match-instruction">Κλικ σε αριστερό στοιχείο, μετά σε δεξί για να τα ταιριάξεις:</div>';
+  html += '<div class="match-container">';
+  html += '<div><div class="match-col-label">Θρεπτική ουσία</div><div class="match-items" id="match-left">';
+  q.pairs.forEach((p, i) => {
+    html += `<div class="match-item" id="ml-${i}" onclick="selectLeft(${i})" data-value="${p.left}">${p.left}</div>`;
+  });
+  html += '</div></div>';
+  html += '<div><div class="match-col-label">Λειτουργία</div><div class="match-items" id="match-right">';
+  rights.forEach((r, i) => {
+    html += `<div class="match-item" id="mr-${i}" onclick="selectRight(${i})" data-value="${r}">${r}</div>`;
+  });
+  html += '</div></div></div>';
+  return html;
+}
+
+function initMatch(q) {
+  matchState = { selectedLeft: null, pairs: q.pairs, matched: 0, total: q.pairs.length };
+}
+
+function selectLeft(idx) {
+  if (answered) return;
+  document.querySelectorAll('#match-left .match-item').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('ml-' + idx);
+  if (el.classList.contains('matched')) return;
+  el.classList.add('selected');
+  matchState.selectedLeft = idx;
+}
+
+function selectRight(idx) {
+  if (answered || matchState.selectedLeft === null) return;
+  const rEl = document.getElementById('mr-' + idx);
+  if (rEl.classList.contains('matched')) return;
+  const lEl = document.getElementById('ml-' + matchState.selectedLeft);
+  const leftVal = lEl.dataset.value;
+  const rightVal = rEl.dataset.value;
+  const correctPair = matchState.pairs.find(p => p.left === leftVal);
+  if (correctPair && correctPair.right === rightVal) {
+    lEl.classList.remove('selected');
+    lEl.classList.add('matched');
+    rEl.classList.add('matched');
+    matchState.matched++;
+    matchState.selectedLeft = null;
+    if (matchState.matched === matchState.total) {
+      answered = true;
+      clearInterval(timer);
+      recordAnswer(true, questions[currentQ]);
+      showFeedback(true, questions[currentQ].explanation);
+      showNext();
+    }
+  } else {
+    lEl.classList.remove('selected');
+    lEl.classList.add('wrong-match');
+    rEl.classList.add('wrong-match');
+    setTimeout(() => {
+      lEl.classList.remove('wrong-match');
+      rEl.classList.remove('wrong-match');
+    }, 800);
+    matchState.selectedLeft = null;
+  }
+}
+
+// ---- FILL ----
+function renderFill(q) {
+  return `<input class="fill-input" id="fill-input" type="text" placeholder="Γράψε την απάντησή σου..." onkeydown="if(event.key==='Enter') checkFill()">
+  <div class="fill-hint">Πίεσε Enter ή κλικ στο κουμπί</div>
+  <button class="btn fill-submit" onclick="checkFill()">Ελέγξτε</button>`;
+}
+
+function checkFill() {
+  if (answered) return;
+  const q = questions[currentQ];
+  const input = document.getElementById('fill-input');
+  const val = input.value.trim().toLowerCase();
+  const correct = q.correct.toLowerCase();
+  const isCorrect = val === correct || (q.aliases && q.aliases.some(a => val === a.toLowerCase()));
+  answered = true;
+  clearInterval(timer);
+  input.classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) input.value = q.correct;
+  recordAnswer(isCorrect, q);
+  showFeedback(isCorrect, q.explanation);
+  showNext();
+}
+
+// =====================================================================
+//  HELPERS
+// =====================================================================
+function recordAnswer(isCorrect, q) {
+  document.getElementById('score-val').textContent = score;
+  if (isCorrect) {
+    score += 10;
+    correctCount++;
+    chapterScores[q.chapter].correct++;
+  } else {
+    wrongCount++;
+  }
+  document.getElementById('score-val').textContent = score;
+}
+
+function showFeedback(isCorrect, explanation) {
+  const fb = document.getElementById('feedback-box');
+  if (!fb) return;
+  fb.style.display = 'block';
+  if (isCorrect) {
+    fb.className = 'feedback-box correct-fb';
+    fb.innerHTML = `<span class="feedback-icon">✅</span><strong>Σωστά!</strong> ${explanation}`;
+  } else {
+    fb.className = 'feedback-box wrong-fb';
+    fb.innerHTML = `<span class="feedback-icon">❌</span><strong>Λάθος!</strong> ${explanation}`;
+  }
+}
+
+function showNext() {
+  const card = document.getElementById('question-card');
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn btn-next';
+  nextBtn.textContent = currentQ + 1 < questions.length ? 'Επόμενη ερώτηση →' : 'Δες αποτελέσματα 🏆';
+  nextBtn.onclick = () => {
+    currentQ++;
+    if (currentQ < questions.length) renderQuestion();
+    else showResults();
+  };
+  card.appendChild(nextBtn);
+}
+
+function startTimer() {
+  const timerEl = document.getElementById('timer-display');
+  timer = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = timeLeft;
+    if (timeLeft <= 10) timerEl.className = 'timer-display warning';
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      if (!answered) {
+        answered = true;
+        const q = questions[currentQ];
+        recordAnswer(false, q);
+        showFeedback(false, '⏰ Ο χρόνος τελείωσε! ' + q.explanation);
+        // disable all interactive elements
+        document.querySelectorAll('.option-btn, .tf-btn, .order-submit, .fill-submit').forEach(el => {
+          el.disabled = true;
+          el.style.cursor = 'not-allowed';
+        });
+        showNext();
+      }
+    }
+  }, 1000);
+}
+
+// =====================================================================
+//  RESULTS
+// =====================================================================
+function showResults() {
+  clearInterval(timer);
+  showScreen('results-screen');
+
+  const total = questions.length;
+  const pct = Math.round((correctCount / total) * 100);
+
+  document.getElementById('stat-correct').textContent = correctCount;
+  document.getElementById('stat-wrong').textContent = wrongCount;
+  document.getElementById('stat-pct').textContent = pct + '%';
+
+  let emoji, grade, msg;
+  if (pct >= 90) { emoji = '🏆'; grade = 'Άριστα!'; msg = 'Εξαιρετική επίδοση! Είσαι έτοιμος/-η για τις εξετάσεις!'; }
+  else if (pct >= 75) { emoji = '🌟'; grade = 'Πολύ Καλά!'; msg = 'Πολύ καλή γνώση! Λίγη ακόμα επανάληψη και είσαι άψογος/-η!'; }
+  else if (pct >= 60) { emoji = '👍'; grade = 'Καλά'; msg = 'Καλή βάση! Χρειάζεσαι λίγη παραπάνω εξάσκηση σε μερικά κεφάλαια.'; }
+  else if (pct >= 40) { emoji = '📚'; grade = 'Αρκετά'; msg = 'Υπάρχει περιθώριο βελτίωσης. Επανέλαβε τα κεφάλαια που δυσκολεύτηκες!'; }
+  else { emoji = '💪'; grade = 'Χρειάζεται δουλειά'; msg = 'Μην απογοητεύεσαι! Διάβασε ξανά τις σημειώσεις και παίξε ξανά.'; }
+
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-grade').textContent = grade;
+  document.getElementById('result-msg').textContent = msg;
+
+  // Chapter breakdown
+  const breakdown = document.getElementById('chapter-breakdown');
+  let bHtml = '';
+  for (const [chap, data] of Object.entries(chapterScores)) {
+    if (data.total === 0) continue;
+    const chapPct = Math.round((data.correct / data.total) * 100);
+    const barColor = chapPct >= 75 ? '#00b894' : chapPct >= 50 ? '#f9ca24' : '#d63031';
+    bHtml += `<div class="chap-row">
+      <span style="min-width:180px;font-size:0.8rem;">${chap}</span>
+      <div class="chap-bar-wrap">
+        <div class="chap-bar-fill" style="width:${chapPct}%;background:${barColor}"></div>
+      </div>
+      <span class="chap-pct" style="color:${barColor}">${chapPct}%</span>
+    </div>`;
+  }
+  breakdown.innerHTML = bHtml;
+}
+
+function restartGame() {
+  showScreen('welcome-screen');
+}
+</script>
+</body>
+</html>
